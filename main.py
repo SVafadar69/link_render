@@ -14,7 +14,7 @@ render_url = 'https://discord-search-bot-jei6.onrender.com'
 TEAM_ID = os.getenv('TEAM_ID')
 BUNDLE_ID = os.getenv('BUNDLE_ID')
 KEY_ID = os.getenv('KEY_ID')
-PRIVATE_KEY_PATH = os.getenv('private_key_path')
+PRIVATE_KEY_PATH = os.getenv('PRIVATE_KEY_PATH')
 PRIVATE_KEY = open(path).read()
 APNS_URL = os.getenv("APNS_URL")
 device_token = os.getenv("device_token")
@@ -71,12 +71,12 @@ async def send_push(token: str, payload: dict):
         print(response.text)
         return response
 
-@app.post(f'{render_url}/detection')
+@app.post(f'/detection')
 async def handle_detection(detection: DetectionRequest):
     payload = build_notification(detection)
     response = await send_push(device_token, payload)
     return {'apns_status': response.status_code, 'apns_body': response.text}
 
 if __name__ == "__main__":
-    payload = build_notification(DetectionRequest(type="homeowner", person_name="John", confidence=0.99))
-    asyncio.run(send_push(device_token, payload))
+    port = int(os.getenv('PORT', 8000))
+    uvicorn.run('main:app', host='0.0.0.0', port=port, reload = False)
