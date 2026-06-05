@@ -9,7 +9,7 @@ load_dotenv()
 
 app = FastAPI()
 
-render_url = 'https://discord-search-bot-jei6.onrender.com'
+render_url = os.getenv('RENDER_URL')
 
 TEAM_ID = os.getenv('TEAM_ID')
 BUNDLE_ID = os.getenv('BUNDLE_ID')
@@ -18,6 +18,7 @@ PRIVATE_KEY_PATH = os.getenv('PRIVATE_KEY_PATH')
 PRIVATE_KEY = open(PRIVATE_KEY_PATH).read()
 APNS_URL = os.getenv("APNS_URL")
 device_token = os.getenv("device_token")
+TOKENS_FILE = os.getenv('TOKENS_FILE')
 
 class DetectionRequest(BaseModel):
     type: str
@@ -70,6 +71,20 @@ async def send_push(token: str, payload: dict):
         print(response.status_code)
         print(response.text)
         return response
+
+@app.post('/register')
+async def retrieve_token(device_token: str) -> str: 
+    tokens = load_tokens()
+    if device_token not in tokens: 
+        tokens.append(token)
+    with open(TOKENS_FILE, 'a', encoding='utf-8') as file: 
+        json.dump(tokens, file)
+
+def load_tokens() -> list[str]:
+    if not os.path.exists(TOKENS_FILE):
+        return []
+    with open(TOKENS_FILE) as f: 
+        return json.load(f)
 
 @app.post(f'/detection')
 async def handle_detection(detection: DetectionRequest):
