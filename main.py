@@ -1,14 +1,82 @@
-from dotenv import load_dotenv 
-import os 
-import openai 
+from fastapi import FastAPI, HTTPException 
+from pydantic import BaseModel 
+import httpx, jwt, time, json 
+import asyncio
+import os
+from dotenv import load_dotenv
 
 load_dotenv()
 
+app = FastAPI()
 
-openai_api_key = os.getenv("openai_api_key")
-chromadb_api_key = os.getenv("chromadb_api_key")
-chromadb_tenant= os.getenv("chromadb_tenant")
-chromadb_database= os.getenv("chromadb_database")
-chroma_collection_name = os.getenv("chroma_collection_name")
-discord_bot_token = os.getenv("discord_bot_token")
-discord_channel_id = os.getenv("discord_channel_id")
+render_url = 'https://render.com/link'
+
+TEAM_ID = os.getenv('TEAM_ID')
+BUNDLE_ID = os.getenv('BUNDLE_ID')
+KEY_ID = os.getenv('KEY_ID')
+PRIVATE_KEY_PATH = os.getenv('private_key_path')
+PRIVATE_KEY = open(path).read()
+APNS_URL = os.getenv("APNS_URL")
+device_token = os.getenv("device_token")
+
+class DetectionRequest(BaseModel):
+    type: str
+    person_name: str
+    confidence: float
+
+def generate_apns_token() -> str: 
+    return jwt.encode(
+        {'iss': TEAM_ID, 'iat': time.time()},
+        PRIVATE_KEY, 
+        algorithm = 'ES256',
+        headers = {'kid': KEY_ID}
+    )
+
+def build_notification(detection: DetectionRequest) -> dict: 
+    match detection.type:
+        case "homeowner":
+            title = f"{detection.person_name} is home"
+            body = "Tap to view camera feed"
+
+        case "unknown":
+            confidence_pct = round(detection.confidence)
+            title = "Unknown person detected"
+            body = "Test notification"
+
+    return {"aps": {
+        "alert": {"title": title, "body": body},
+        "sound": "default",
+        "badge": 1
+    }, 
+    "detection_type": detection.type,
+    "person_name": detection.person_name
+    }
+
+async def send_push(token: str, payload: dict):
+    apns_token = generate_apns_token()
+    headers = {
+        'authorization': f'bearer {apns_token}',
+        'apns-topic': BUNDLE_ID, 
+        'apns-push-type': 'alert',
+        'apns-priority': '10'
+
+    }
+    async with httpx.AsyncClient(http2=True) as client: 
+        response = await client.post(
+            f'{APNS_URL}/3/device/{token}',
+            headers = headers,
+            content = json.dumps(payload)
+        )
+        print(response.status_code)
+        print(response.text)
+        return response
+
+@app.post(f'{render_url}/detection')
+async def handle_detection(detection: DetectionRequest):
+    payload = build_notification(detection)
+    response = await send_push(device_token, payload)
+    return {'apns_status': response.status_code, 'apns_body': response.text}
+
+if __name__ == "__main__":
+    payload = build_notification(DetectionRequest(type="homeowner", person_name="John", confidence=0.99))
+    asyncio.run(send_push(device_token, payload))
