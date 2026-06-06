@@ -38,23 +38,20 @@ def generate_apns_token() -> str:
     )
 
 def build_notification(detection: DetectionRequest) -> dict: 
-    match detection.type:
-        case "homeowner":
-            title = f"{detection.person_name} is home"
-            body = "Tap to view camera feed"
-
-        case "unknown":
-            confidence_pct = round(detection.confidence)
-            title = "Unknown person detected"
-            body = "Test notification"
+    body = "URGENT - THERE IS SOMEONE DANGEROUS OUTSIDE"
+    title = "John has arrived"
+    confidence_pct = float(detection.confidence)
+    detection_type = detection.notification_type 
+    person_name = detection.person_name
 
     return {"aps": {
         "alert": {"title": title, "body": body},
         "sound": "default",
         "badge": 1
     }, 
-    "detection_type": detection.type,
-    "person_name": detection.person_name
+    "detection_type": detection_type,
+    "person_name": person_name, 
+    "confidence": confidence_pct
     }
 
 async def send_push(token: str, payload: dict):
@@ -63,7 +60,8 @@ async def send_push(token: str, payload: dict):
         'authorization': f'bearer {apns_token}',
         'apns-topic': BUNDLE_ID, 
         'apns-push-type': 'alert',
-        'apns-priority': '10'
+        'apns-priority': '10', 
+        'content-type': 'application/json'
 
     }
     async with httpx.AsyncClient(http2=True) as client: 
