@@ -48,7 +48,8 @@ def build_notification(detection: DetectionRequest) -> dict:
     return {"aps": {
         "alert": {"title": title, "body": body},
         "sound": "default",
-        "badge": 1
+        "badge": 1,
+        "mutable-content": 1
     }, 
     "detection_type": detection_type,
     "person_name": person_name, 
@@ -82,6 +83,11 @@ async def retrieve_token(device: DeviceRegistration):
         return {
             'device_token': device.device_token,
             'user_name': device.user_name}
+
+def save_tokens(tokens: list[dict]) -> None: 
+    with open(TOKENS_FILE, 'a', encoding='utf-8') as file:
+        json.dump(tokens, file, indent = 2)
+
 
 def load_tokens():
     if not os.path.exists(TOKENS_FILE):
