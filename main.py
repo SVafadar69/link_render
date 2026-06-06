@@ -30,6 +30,7 @@ class DetectionRequest(BaseModel):
     confidence: float
 
 def generate_apns_token() -> str: 
+    print(f'{TEAM_ID}, {PRIVATE_KEY}, {DEVICE_TOKEN}, {KEY_ID}')
     return jwt.encode(
         {'iss': TEAM_ID, 'iat': time.time()},
         PRIVATE_KEY, 
