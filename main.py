@@ -81,17 +81,24 @@ async def send_push(token: str, payload: dict):
 async def retrieve_token(device_token: DeviceRegistration): 
     tokens = load_tokens()
     print(f'load tokens: {load_tokens}')
-    if device_token not in tokens: 
+    print(F'Received token: {token.device_token}')
+    print(f'Device name: {token.user_name}')
+
+    existing_tokens = [item['device_token'] for item in tokens]
+
+    print(f'all current tokens: {existing_tokens}')
+
+    if device_token.device_token not in existing_tokens: 
         tokens.append(token)
     with open(TOKENS_FILE, 'a', encoding='utf-8') as file: 
         json.dump(tokens, file)
 
-def load_tokens() -> list[str]:
+def load_tokens():
     if not os.path.exists(TOKENS_FILE):
         return []
     with open(TOKENS_FILE, 'r', encoding='utf-8') as f: 
         try:
-            json.load(f)
+            return json.load(f)    
         except Exception as e: 
             print(f'Error when trying to open JSON: {e}')
             return []
