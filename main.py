@@ -96,7 +96,9 @@ def load_tokens():
 @app.post(f'/detection')
 async def handle_detection(detection: DetectionRequest):
     payload = build_notification(detection)
+    print(f'built notification: {payload}')
     response = await send_push(DEVICE_TOKEN, payload)
+    print(f'response: {response}')
     return {'apns_status': response.status_code, 'apns_body': response.text}
 
 if __name__ == "__main__":
