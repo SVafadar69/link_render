@@ -79,22 +79,10 @@ async def send_push(token: str, payload: dict):
 
 @app.post('/register')
 async def retrieve_token(device: DeviceRegistration): 
-    tokens = load_tokens()
-    print(f'load tokens: {load_tokens}')
-    print(F'Received token: {device.device_token}')
-    print(f'Device name: {device.user_name}')
-
-    existing_tokens = [item['device_token'] for item in tokens]
-
-    print(f'all current tokens: {existing_tokens}')
-
-    if device.device_token not in existing_tokens: 
-        tokens.append({
+    if device: 
+        return {
             'device_token': device.device_token,
-            'user_name': device.user_name
-        })
-    with open(TOKENS_FILE, 'a', encoding='utf-8') as file: 
-        json.dump(tokens, file)
+            'user_name': device.user_name}
 
 def load_tokens():
     if not os.path.exists(TOKENS_FILE):
