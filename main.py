@@ -25,7 +25,7 @@ class DeviceRegistration(BaseModel):
     user_name: str 
 
 class DetectionRequest(BaseModel):
-    type: str
+    notification_type: str
     person_name: str
     confidence: float
 
