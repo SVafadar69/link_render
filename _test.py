@@ -2,6 +2,8 @@ import json
 from dotenv import load_dotenv 
 import os 
 import openai 
+from openai import OpenAI
+from groq import Groq
 import discord
 from datetime import timezone
 from typing import List
@@ -21,6 +23,7 @@ chromadb_database= os.getenv("CHROMADB_DATABASE")
 chroma_collection_name = os.getenv("CHROMA_COLLECTION_NAME")
 discord_bot_token = os.getenv("DISCORD_BOT_TOKEN")
 discord_channel_id = int(os.getenv("DISCORD_CHANNEL_ID"))
+groq_api_key = os.getenv('groq_api_key')
 
 os.environ['CHROMA_API_KEY'] = chromadb_api_key
 
@@ -33,6 +36,9 @@ chroma_client = chromadb.CloudClient(
   database= chromadb_database
 )
 schema = Schema()
+openai_client = OpenAI(
+    api_key = openai_api_key
+)
 
 
 sparse_ef = ChromaCloudSpladeEmbeddingFunction()
@@ -80,6 +86,27 @@ def answer_query(system_prompt: str) -> str:
     )
     return response.output_text
 
+def groq_answer(system_prompt: str) -> str: 
+   
+    client = Groq(api_key = groq_api_key)
+    completion = client.chat.completions.create(
+    model="openai/gpt-oss-120b",
+    messages=[
+      {
+        "role": "system",
+        "content": system_prompt
+      },
+      
+    ],
+    temperature=1,
+    max_completion_tokens=8192,
+    top_p=1,
+    reasoning_effort="high",
+    stream=False,
+    stop=None)
+
+    return completion.choices[0].message.content or ""
+        
 formatted_messages = []
 
 def chunk_documents(messages: list, chunk_size: int = 10, overlap: int = 3):
@@ -158,4 +185,13 @@ def retrieve_messages(messages_path: str = 'discord_messages'):
 # client.run(discord_bot_token)
 if __name__ == "__main__":
     messages = ast.literal_eval(open('discord_messages', 'r', encoding='utf-8').read())
-    chunk_documents(messages)
+    #chunk_documents(messages)
+    query = 'What is Steven currently building?'
+    responses = run_hybrid_search(collection = collection_anduril, query = query)
+    documents = responses.get('documents', '')
+    print(F'responses: {documents}')
+    print(len(documents))
+    system_prompt = retrieve_prompt('search_prompt.txt').format(USER_QUERY = query, DOCS = documents)
+    print(f'system_prompt: {system_prompt}')
+    llm_response = answer_query(system_prompt = system_prompt)
+    print(f'llm_responses: {llm_response}')
