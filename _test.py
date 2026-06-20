@@ -23,12 +23,28 @@ chromadb_tenant= os.getenv("CHROMADB_TENANT")
 chromadb_database= os.getenv("CHROMADB_DATABASE")
 chroma_collection_name = os.getenv("CHROMA_COLLECTION_NAME")
 discord_bot_token = os.getenv("DISCORD_BOT_TOKEN")
-discord_channel_id = int(os.getenv("DISCORD_CHANNEL_ID"))
+general_channel_id = int(os.getenv("DISCORD_CHANNEL_ID"))
+intro_channel_id = int(os.getenv('DISCORD_INTRO_CHANNEL_ID'))
+notes_channel_id = int(os.getenv('DISCORD_NOTES_CHANNEL_ID'))
 groq_api_key = os.getenv('groq_api_key')
 
 os.environ['CHROMA_API_KEY'] = chromadb_api_key
 
-starting_chunk_index = 163
+channels = [general_channel_id, intro_channel_id, notes_channel_id]
+
+general_channel_starting_chunk_index = 163
+
+
+server_users = {
+    "ohsheetklaus": "Steven",
+    "ShortSideburns": "Vihan",
+    "1kdev": "1k",
+    "pope": "Pope",
+    "search": "BOT",
+    "m1keromano": "Mike Romano",
+    "RC": "Rita",
+    "yourboymaleek": "Malik"
+}
 
 client = discord.Client(intents=discord.Intents.default())
 chroma_client = chromadb.CloudClient(
@@ -158,23 +174,39 @@ def chunk_documents(messages: list, chunk_size: int = 10, overlap: int = 3):
 async def on_rate_limit(payload):
     print(f'Rate limit hit -> bucket: {payload.bucket}')
 
+# @client.event
+# async def on_ready():
+#     for channel in channels: 
+#         channel = client.get_channel(channel)
+#         print(f'channel: {channel}')
+        
+#         users = set()
+#         async for msg in channel.history(limit=None):
+#             users.add((msg.author.id, msg.author.display_name))
+        
+#         print(f"Got {len(users)} unique users")
+#         print(f'Users: {users}')
+        
+#     await client.close()
+
 @client.event
 async def on_ready():
-    channel = client.get_channel(discord_channel_id)
-    print(f'channel: {channel}')
-    messages = [
-        {
-            'message_id': str(msg.id),
-            'sender_name': msg.author.display_name, 
-            'text': msg.content
-        }
-        async for msg in channel.history(limit = None)
-    ]
-    print(f"Got {len(messages)} messages")
+    for channel in channels: 
+        channel = client.get_channel(discord_channel_id)
+        print(f'channel: {channel}')
+        messages = [
+            {
+                'message_id': str(msg.id),
+                'sender_name': server_users.get(msg.author.display_name, msg.author.display_name), 
+                'text': msg.content
+            }
+            async for msg in channel.history(limit = None)
+        ]
+        print(f"Got {len(messages)} messages")
 
-    with open('discord_messages', 'a', encoding='utf-8') as file: 
-        file.write(str(messages))
-    await client.close()
+        with open(f'discord_messages_all', 'a', encoding='utf-8') as file: 
+            file.write(str(messages))
+        await client.close()
 
 def retrieve_messages(messages_path: str = 'discord_messages'):
     messages = ast.literal_eval(open(messages_path, 'r', encoding='utf-8').read())
@@ -187,16 +219,16 @@ def get_token_count(text: str) -> int:
     tokens = encoding.encode(text)
     return len(tokens)
 
-# client.run(discord_bot_token)
-if __name__ == "__main__":
-    messages = ast.literal_eval(open('discord_messages', 'r', encoding='utf-8').read())
-    #chunk_documents(messages)
-    query = 'What is ohsheetklaus currently building'
-    responses = run_hybrid_search(collection = collection_anduril, query = query)
-    documents = responses.get('documents', '')[:10]
-    print(len(documents))
-    system_prompt = retrieve_prompt('search_prompt.txt').format(USER_QUERY = query, DOCS = documents)
-    token_count = get_token_count(system_prompt)
-    print(f'token length: {token_count}')
-    llm_response = answer_query(system_prompt = system_prompt)
-    print(f'llm_responses: {llm_response}')
+client.run(discord_bot_token)
+# if __name__ == "__main__":
+    # messages = ast.literal_eval(open('discord_messages', 'r', encoding='utf-8').read())
+    # #chunk_documents(messages)
+    # query = 'What is ohsheetklaus currently building'
+    # responses = run_hybrid_search(collection = collection_anduril, query = query)
+    # documents = responses.get('documents', '')[:10]
+    # print(len(documents))
+    # system_prompt = retrieve_prompt('search_prompt.txt').format(USER_QUERY = query, DOCS = documents)
+    # token_count = get_token_count(system_prompt)
+    # print(f'token length: {token_count}')
+    # llm_response = answer_query(system_prompt = system_prompt)
+    # print(f'llm_responses: {llm_response}')
