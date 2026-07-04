@@ -30,7 +30,7 @@ class DetectionRequest(BaseModel):
     confidence: float
 
 class FaceEmbeddings(BaseModel): 
-
+    face_embeddings: list[float]
 class PersonDescription(BaseModel): 
     known_unknown: str 
     sentence_description: str 
