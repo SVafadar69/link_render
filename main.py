@@ -30,6 +30,10 @@ class DetectionRequest(BaseModel):
     confidence: float
 
 class FaceEmbeddings(BaseModel): 
+
+class PersonDescription(BaseModel): 
+    known_unknown: str 
+    sentence_description: str 
     
 
 def generate_apns_token() -> str: 
@@ -111,7 +115,15 @@ async def handle_detection(detection: DetectionRequest):
     return {'apns_status': response.status_code, 'apns_body': response.text}
 
 @app.post('/face_embeddings')
-async def embed_face()
+async def embed_face(face_embeddings: FaceEmbeddings):
+    pass
+
+@app.post('/person_description')
+async def describe_person(person_description: PersonDescription): 
+    if person_description: 
+        person_status = person_description.known_unknown 
+        sentence_description = person_description.sentence_description 
+        return {'person_status': person_status, 'sentence_description': sentence_description}
 
 if __name__ == "__main__":
     port = int(os.getenv('PORT', 8000))
