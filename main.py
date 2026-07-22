@@ -24,6 +24,9 @@ class DeviceRegistration(BaseModel):
     device_token: str 
     user_name: str 
 
+class PersonDetected(BaseModel):
+    person_name: str
+
 class DetectionRequest(BaseModel):
     notification_type: str
     person_name: str
@@ -31,7 +34,8 @@ class DetectionRequest(BaseModel):
 
 class FaceEmbeddings(BaseModel): 
     face_embeddings: list[float]
-class PersonDescription(BaseModel): 
+
+class CLIPDescription(BaseModel): 
     known_unknown: str 
     sentence_description: str 
     
@@ -61,6 +65,34 @@ def build_notification(detection: DetectionRequest) -> dict:
     "detection_type": detection_type,
     "person_name": person_name, 
     "confidence": confidence_pct
+    }
+
+# can just do hard-coded prompts for each (start with VLM/move onto local CLIP)
+# def build_notification(person_description: CLIPDescription) -> dict:
+#     body = f'There is a {person_description.known_unknown} {person_description.sentence_description}'
+#     title = 'Person outside'
+#     return {'aps': {
+#         'alert': {'title': title, 'body': body}, 
+#         'sound': 'default', 
+#         'badge': 1, 
+#         'mutable-content': 1
+#     }, 
+#     'detection_type': detection_type, 
+#     'person_name': person_name, 
+#     'confidence'< }
+
+def build_notification_face_rec(person_detected: PersonDetected) -> dict: 
+    person_name = person_detected.person_name
+    body = f'{person_name} has arrived'
+    title = 'Family Member detected'
+    return {
+        'aps': {
+            'alert': {'title': title, 'body': body},
+            'sound': 'default',
+            'badge': 1,
+            'mutable-content': 1
+        },
+        'person_name': person_name
     }
 
 async def send_push(token: str, payload: dict):
@@ -124,6 +156,12 @@ async def describe_person(person_description: PersonDescription):
         person_status = person_description.known_unknown 
         sentence_description = person_description.sentence_description 
         return {'person_status': person_status, 'sentence_description': sentence_description}
+
+@app.post('/facial_recognition')
+async def face_rec_inference(person_detected: PersonDetected):
+    if person_detected: 
+        person_name = person_detected.person_name
+        return {'person_name': person_name}
 
 if __name__ == "__main__":
     port = int(os.getenv('PORT', 8000))
