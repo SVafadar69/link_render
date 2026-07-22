@@ -163,6 +163,14 @@ async def face_rec_inference(person_detected: PersonDetected):
         person_name = person_detected.person_name
         return {'person_name': person_name}
 
+@app.post('/facial_recognition_notification')
+async def face_rec_notification(person_detected: PersonDetected):
+    if person_detected:
+        payload = build_notification_face_rec(person_detected)
+        response = await send_push(DEVICE_TOKEN, payload)
+        print(f'response: {response.text}')
+        return {'apns_status': response.status_code, 'apns_body': response.text}
+
 if __name__ == "__main__":
     port = int(os.getenv('PORT', 8000))
     uvicorn.run('main:app', host='0.0.0.0', port=port, reload = False)
