@@ -5,6 +5,11 @@ import asyncio
 import os
 from dotenv import load_dotenv
 
+'''
+"user_name": "Steven's Iphone",
+"device_token": "807040e24e907e4b2f7817eacb51969550900fc3dacda09f7091044ff0acd2a737d668fa113c83175fc8384b41c141ad53413eb0c46518f3ae82887508e2bf1cff0e26a07ca56b4f383bcc3249abb636", 
+'''
+
 load_dotenv()
 
 app = FastAPI()
