@@ -43,6 +43,10 @@ class FaceEmbeddings(BaseModel):
 class CLIPDescription(BaseModel): 
     known_unknown: str 
     sentence_description: str 
+
+class VLMDescription(BaseModel):
+    animal_name: str
+    animal_size: str
     
 
 def generate_apns_token() -> str: 
@@ -98,6 +102,22 @@ def build_notification_face_rec(person_detected: PersonDetected) -> dict:
             'mutable-content': 1
         },
         'person_name': person_name
+    }
+
+def build_notification_vlm(vlm_description: VLMDescription) -> dict: 
+    animal_size = vlm_description.animal_size
+    animal_name = vlm_description.animal_name
+    body = f'There is a {animal_size} {animal_name}'
+    title = 'Animal detected'
+    return {
+        'aps': {
+            'alert': {'title': title, 'body': body},
+            'sound': 'default',
+            'badge': 1,
+            'mutable-content': 1
+        },
+        'animal_size': animal_size,
+        'animal_name': animal_name
     }
 
 async def send_push(token: str, payload: dict):
@@ -167,6 +187,14 @@ async def face_rec_notification(person_detected: PersonDetected):
     if person_detected:
 
         payload = build_notification_face_rec(person_detected)
+        response = await send_push(DEVICE_TOKEN, payload)
+        print(f'response: {response.text}')
+        return {'apns_status': response.status_code, 'apns_body': response.text}
+
+@app.post('/vlm_description')
+async def describe_vlm(vlm_description: VLMDescription):
+    if vlm_description:
+        payload = build_notification_vlm(vlm_description)
         response = await send_push(DEVICE_TOKEN, payload)
         print(f'response: {response.text}')
         return {'apns_status': response.status_code, 'apns_body': response.text}
