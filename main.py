@@ -45,8 +45,8 @@ class CLIPDescription(BaseModel):
     sentence_description: str 
 
 class VLMDescription(BaseModel):
-    animal_name: str
     animal_size: str
+    animal_name: str
     
 
 def generate_apns_token() -> str: 
